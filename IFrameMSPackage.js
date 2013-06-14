@@ -1,5 +1,4 @@
 
-
 var vSiteRequest = {
     getVerticalSiteList: function () {
         Rg.net.ajax.Post.Ajax(null, "GetVerticalSiteList", vSiteCallBack.getVerticalSiteList, vSiteCallBack.error);
@@ -78,7 +77,7 @@ var iframeCallBack = {
             Rg.message.growlUI(result.Message);
             //创建后提示操作成功
         }
-        else { Rg.message.growlUI(result.Message); }
+        else { Rg.message.growlUI('failed'); }
     },
     updateIFrame: function (result) {
         result = result.d;
@@ -86,7 +85,7 @@ var iframeCallBack = {
             Rg.message.growlUI(result.Message);
             //更新成功逻辑
         }
-        else { Rg.message.growlUI(result.Message); }
+        else { Rg.message.growlUI('failed); }
     },
     deleteIFrame: function (result) {
         if (result.Flag)
