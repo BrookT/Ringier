@@ -1,5 +1,6 @@
 //Brook 2013-6-28 11:26
 //Brook 2013-6-28 15:38 Modify for extension of js,model
+//Brook 2013-6-28 17:19 Modify for extension getitem of DAL
 
 using System;
 using System.Collections.Generic;
@@ -74,7 +75,7 @@ namespace workTools
             tsql.output(tsql.CreateCSharp(ColumnList, "DAL"), TSQL.outputPath, TSQL.dir, TSQL.metaName + "DAL", ".cs");
             tsql.output(tsql.CreateCSharp(ColumnList, "BLL"), TSQL.outputPath, TSQL.dir, TSQL.metaName + "BLL", ".cs");
             tsql.output(tsql.CreateCSharp(ColumnList, "webservice"), TSQL.outputPath, TSQL.dir, TSQL.metaName + "WS", ".asmx.cs");
-            tsql.output(tsql.CreateJS(ColumnList),TSQL.outputPath,TSQL.dir,TSQL.metaName+"Package",".js");
+            tsql.output(tsql.CreateJS(ColumnList), TSQL.outputPath, TSQL.dir, TSQL.metaName + "Package", ".js");
             Console.Write("complete!");
             Console.ReadKey();
         }
@@ -156,17 +157,29 @@ namespace workTools
         public static string procDName = "Delete" + metaName;
         public static string procGLName = "Get" + metaName + "List";
         public static string devName = "Brook";
+        public static string projName = "RMS";
+        public static string modelNS = String.IsNullOrEmpty(projName) ? "Models" : projName + ".Models";
+        public static string dalNS = string.IsNullOrEmpty(projName) ? "DAL" : projName + ".DAL";
+        public static string bllNS = string.IsNullOrEmpty(projName) ? "BLL" : projName + ".BLL";
         IList<DataModel> ColumnList;
         public TSQL()
         {
 
         }
 
+        public static string getNameSpace(string projName, string classLibName)
+        {
+            string result = "";
+            projName = TSQL.projName;
+            result = string.IsNullOrEmpty(projName) ? classLibName : projName + "." + classLibName;
+            return result;
+        }
+
         public string CreateJS(List<DataModel> ColumnList)
         {
             string result = "";
-            result+=CreateJSSignature(TSQL.devName,metaName);
-             result += "var " + metaName + "Request={\t";//request start
+            result += CreateJSSignature(TSQL.devName, metaName);
+            result += "var " + metaName + "Request={\t";//request start
             result += "     list:function(postData){Post.Ajax(postData,'" + procGLName + "'," + metaName + "CallBack.list," + metaName + "Callback.error);},\t";
             result += "     item:function(postData){Post.Ajax(postData,'" + procRName + "'," + metaName + "Callback.item," + metaName + "Callback.error);},\t";
             result += "     insert:function(postData{Post.Ajax(postData,'" + procCName + "'," + metaName + "Callback.insert," + metaName + "Callback.error);},\t";
@@ -242,7 +255,7 @@ namespace workTools
             result += "using System;\t";
             result += "using System.Collections.Generic;\t";
             result += "using System.Text;\t";
-            result += "namespace Models\t";
+            result += "namespace " + TSQL.getNameSpace(TSQL.projName, "Model") + "\t";
             result += "{\t";//namespace start
             result += "public class " + metaName + "Model \t";
             result += " {";//class start
@@ -258,6 +271,48 @@ namespace workTools
         public string CreateCSharpDAL(List<DataModel> ColumnList)
         {
             string result = "";
+            result += "using System;\t";
+            result += "using System.Collections.Generic;\t";
+            result += "using System.Text;\t";
+            result += "using System.Data;\t";
+            result += "using System.Data.SqlClient;\t";
+            result += "namespace " + TSQL.getNameSpace(TSQL.projName, "DAL") + "\t";
+            result += "{\t";//namespace start
+            result += "     public class " + metaName + "DAL\t";
+            result += "     {\t";//class start
+            result += "         private string procName;\t";
+            result += "         private IDataParameter[] parameters;\t";
+            result += "         public Models." + metaName + "Model " + TSQL.procRName + "(Models." + metaName + "Model searchM)\t";
+            result += "         {\t";
+            string InstanceName="resultM";
+            result += "             Models."+metaName+"Model "+InstanceName+"=new Models."+metaName+"Model();\t";
+            result += "             procName=\"" + TSQL.procRName + "\";\t";
+            result += "             parameters=new IDataParameter[]{\t";//param start
+            foreach (DataModel column in ColumnList)
+            {
+                if (column.IsPrimaryKey)
+                {
+                    result += "               new SqlParameter(\"@" + column.ColumnName + "\",searchM." + column.ColumnName + ")\t";
+                }
+            }
+            result += "               };\t";//param end
+            result += "               SqlHelper sqlhelper=new SqlHelper();\t";
+            result += "               using(SqlDataReader sr=sqlhelper.RunProcedure(procName,parameters))\t";
+            result += "               {\t";//using start
+            result += "                 while(sr.read())\t";
+            result += "                 {\t";//while start
+            foreach (DataModel column in ColumnList)
+            {
+                result += TSQL.SetValueWhenReadDB(column, "resultM");
+            }
+            result += "                 }\t";//while end
+            result += "               }\t";//using end
+            result += "             return "+InstanceName+";\t";
+            result += "         }\t";
+            result += "     }\t";//class end
+            result += "}\t";//namespace end
+            result += "namespace " + "DAL" + "\t";
+
             return result;
         }
 
@@ -511,6 +566,24 @@ namespace workTools
                 case "NVARCHAR(8)":
                 case "NVARCHAR(255)":
                 case "NVARCHAR(max)": result = true; break;
+                default: break;
+            }
+            return result;
+        }
+
+        public static string SetValueWhenReadDB(DataModel column, string InstanceName)
+        {
+            string result = "";
+            switch (column.ColumnType)
+            {
+                case "int": result = "                   " + InstanceName + "." + column.ColumnName + "=int.parse(sr[\"" + column.ColumnName + "\"].ToString());\t"; break;
+                case "bit": result = "                   " + InstanceName + "." + column.ColumnName + "=sr[\"" + column.ColumnName + "\"].ToString()==\"1\"?true:false;\t"; break;
+                case "DateTime": result = "                  " + InstanceName + "." + column.ColumnName + "=sr[\"" + column.ColumnName + "\"].ToString();\t"; break;
+                case "NTEXT":
+                case "NVARCHAR(20)":
+                case "NVARCHAR(8)":
+                case "NVARCHAR(255)":
+                case "NVARCHAR(max)": result = "                 " + InstanceName + "." + column.ColumnName + "=sr[\"" + column.ColumnName + "\"].ToString();\t"; break;
                 default: break;
             }
             return result;
