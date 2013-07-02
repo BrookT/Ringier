@@ -2,6 +2,7 @@
 //Brook 2013-6-28 15:38 Modify for extension of js,model
 //Brook 2013-6-28 17:19 Modify for extension getitem of DAL
 //Brook 2013-7-1 17:29 Modify for extension dal 
+//Brook 2013-7-2 16:48 Modify for extension dal
 
 using System;
 using System.Collections.Generic;
@@ -279,15 +280,15 @@ namespace workTools
             result += "using System.Data.SqlClient;\t";
             result += "namespace " + TSQL.getNameSpace(TSQL.projName, "DAL") + "\t";
             result += "{\t";//namespace start
-            result += "     public class " + procCName + "DAL\t";
+            result += "     public class " + procCName + "DAL\t";//create 
             result += "     {\t";//class start
             result += "         private string procName;\t";
             result += "         private IDataParameter[] parameters;\t";
             result += "         public Models." + metaName + "Model " + TSQL.procRName + "(Models." + metaName + "Model searchM)\t";
             result += "         {\t";//method start
             result += "         try{\t";
-            string InstanceName="resultM";
-            result += "             Models."+metaName+"Model "+InstanceName+"=new Models."+metaName+"Model();\t";
+            string InstanceName = "resultM";
+            result += "             Models." + metaName + "Model " + InstanceName + "=new Models." + metaName + "Model();\t";
             result += "             procName=\"" + TSQL.procRName + "\";\t";
             result += "             parameters=new IDataParameter[]{\t";//param start
             foreach (DataModel column in ColumnList)
@@ -309,32 +310,32 @@ namespace workTools
             }
             result += "                 }\t";//while end
             result += "               }\t";//using end
-            result += "             return "+InstanceName+";\t";
+            result += "             return " + InstanceName + ";\t";
             result += "               }\t";
             result += "             catch(exception e)\t";
             result += "             {\t";
-            result += "                 throw ExceptionControl.Exception(e,"+procRName+" DAL);";
+            result += "                 throw ExceptionControl.Exception(e," + procRName + " DAL);\t";
             result += "             }\t";
             result += "         }\t";//method end
 
-            result += "     public int " + TSQL.procDName + " (";
+            result += "     public int " + TSQL.procDName + " (";//delete
             foreach (DataModel column in ColumnList)
             {
                 if (column.IsPrimaryKey)
                 {
-                    result += column.ColumnType+" "+column.ColumnName;
+                    result += column.ColumnType + " " + column.ColumnName;
                 }
             }
-            result+=")\t";
+            result += ")\t";
             result += "     {\t";//method start
             result += "         try{\t";//try start
-            result += "         procName=\""+TSQL.procDName+"\";\t";
+            result += "         procName=\"" + TSQL.procDName + "\";\t";
             result += "         parameters=new IDataParameter[]{\t";//param start
             foreach (DataModel column in ColumnList)
             {
                 if (column.IsPrimaryKey)
                 {
-                    result += "         new SqlParameter(@"+column.ColumnName+","+column.ColumnName+")";
+                    result += "         new SqlParameter(@" + column.ColumnName + "," + column.ColumnName + ")\t";
                 }
             }
             result += "         }\t;";//param end
@@ -344,20 +345,20 @@ namespace workTools
             result += "         }\t";
             result += "         catch(exception e)\t";
             result += "         {\t";//catch start
-            result += "            throw ExceptionControl.Exception(e,"+procDName+" DAL);\t";
+            result += "            throw ExceptionControl.Exception(e," + procDName + " DAL);\t";
             result += "         }\t";//catch end
             result += "     }\t";//method end
-            string refName = "ref"+metaName+"Model";
-            result += "     public int "+procUName+"(Models."+metaName+"Model "+refName+")\t";
+            string refName = "ref" + metaName + "Model";
+            result += "     public int " + procUName + "(Models." + metaName + "Model " + refName + ")\t";
             result += "     {\t";//method start
             result += "         try{\t";//try start
-            result += "                 procName=\""+procUName+"\"\t";
+            result += "                 procName=\"" + procUName + "\"\t";
             result += "                 parameters=new IDataParameter[]{\t";//param start
-            int columnCount=0;
+            int columnCount = 0;
             foreach (DataModel column in ColumnList)
             {
                 columnCount++;
-                result += "                 new SqlParameter(@"+column.ColumnName+",refName."+column.ColumnName+")";
+                result += "                 new SqlParameter(@" + column.ColumnName + ",refName." + column.ColumnName + ")";
                 if (columnCount != ColumnList.Count)
                 {
                     result += ",";
@@ -367,53 +368,88 @@ namespace workTools
             result += "         Sqlhelper sqlhelper=new SqlHelper();\t";
             result += "         int result=sqlhelper.ExecProcedure(procName,parameters);\t";
             result += "         return result;\t";
-            result+="                   }\t";//param end
-            result+="               }\t";//try end
+            result += "                   }\t";//param end
+            result += "               }\t";//try end
             result += "         catch(exception e){\t";//catch start
-            result += "             throw ExceptionControl(e,"+procUName+" DAL);\t";
-            result+="           }\t";//catch end
+            result += "             throw ExceptionControl(e," + procUName + " DAL);\t";
+            result += "           }\t";//catch end
             result += "     }\t";//method end
             foreach (DataModel column in ColumnList)
             {
                 if (column.IsPrimaryKey)
                 {
-                    result += "     public Models." + metaName + "Model " + procRName + "("+column.ColumnType+" "+column.ColumnName+")\t";
+                    result += "     public Models." + metaName + "Model " + procRName + "(" + column.ColumnType + " " + column.ColumnName + ")\t";//get
                 }
             }
             result += "     {\t";//method start
             string resultInstance = "resultM";
-            result += "         Models."+metaName+"Model "+resultInstance+"=new Models."+metaName+"Model();\t";
-            result += "         procName=\""+procRName+"\";\t";
-            result += "         parameters=new IDataParameter[](";//param start
+            result += "         Models." + metaName + "Model " + resultInstance + "=new Models." + metaName + "Model();\t";
+            result += "         procName=\"" + procRName + "\";\t";
+            result += "         parameters=new IDataParameter[](\t";//param start
+            columnCount = 0;
+            foreach (DataModel column in ColumnList)
+            {
+                if (column.IsPrimaryKey)
+                {
+                    result += "             new SqlParameter(@" + column.ColumnName + "," + column.ColumnName + ")";
+                    result += "\t";
+                }
+            }
+            result += "           );\t";//param end
+            result += "         SqlHelper sqlhelper=new SqlHelper();\t";
+            result += "         using(SqlDataReader sr=sqlhelper.ExecProcedure(procName,parameters))\t";
+            result += "         {\t";//using start
+            foreach (DataModel column in ColumnList)
+            {
+                if (!IsTypeStringable(column.ColumnType))
+                {
+                    result += "             " + resultInstance + "." + column.ColumnName + "=" + ParseSqlTypeIntoCSharpType(column.ColumnType) + ".Parse(sr[\"" + column.ColumnName + "\"].ToString());\t";
+                }
+                else
+                {
+                    result += "             " + resultInstance + "." + column.ColumnName + "=sr[\"" + column.ColumnName + "\"].ToString();\t";
+                }
+            }
+            result += "         }\t";//using end
+            result += "     return " + InstanceName + ";\t";
+            result += "     }\t";//method end
+            
+            result += "     public List<Models."+metaName+"Model> "+procGLName+"(Models."+metaName+"Model "+InstanceName+",int startRowID,int endRowID)\t";//get list
+            result += "     {\t";//method start
+            resultInstance = "resultL";
+            result += "         List<Models."+metaName+"Model> "+resultInstance+"=new List<Models."+metaName+">();\t";
+            result += "         procName=\""+procGLName+"\";\t";
+            result += "         parameters=new IDataParameter[]{\t";//param start
             columnCount = 0;
             foreach (DataModel column in ColumnList)
             {
                 columnCount++;
-                result += "             new SqlParameter(@"+column.ColumnName+","+column.ColumnName+")";
-                if (columnCount != ColumnList.Count)
+                if (!column.IsPrimaryKey && !column.IsCreateTime && !column.IsUpdateTime)
                 {
-                    result += ",";
+                    result += "             new SqlParameter(@" + column.ColumnName + "," + column.ColumnName + ")";//param start
+                    if ( !column.IsPrimaryKey && !column.IsCreateTime && !column.IsUpdateTime)
+                    {
+                        result += ",";
+                    }
+                    result += "\t";
                 }
-                result += "\t";
             }
-            result+="           );\t";//param end
+            result += "             new SqlParameter(@StartRowID,startRowID),\t";
+            result += "             new SqlParameter(@EndRowID,endRowID)\t";
+            result += "             };\t";//param end
             result += "         SqlHelper sqlhelper=new SqlHelper();\t";
-            result += "         using(SqlDataReader sr=sqlhelper.ExecProcedure(procName,parameters))\t";
-            result += "         {\t";//using start
-            foreach(DataModel column in ColumnList)
+            result += "         using(SqlDataReader sr=sqlhelper.RunProcedure(procName,parameters))\t";
+            result += "         {\t";
+            result += "             Models." + metaName + "Model tempM=new Models." + metaName + "Model();\t" ;
+            foreach (DataModel column in ColumnList)
             {
-                if (!IsTypeStringable(column.ColumnType))
-                {
-                    result += "             " + resultInstance + "." + column.ColumnName + "="+ParseSqlTypeIntoCSharpType(column.ColumnType)+".Parse(sr[\"" + column.ColumnName + "\"].ToString());\t";
-                }
-                else
-                {
-                    result += "             " + resultInstance + "." + column.ColumnName + "=sr[\""+column.ColumnName+"\"].ToString();\t" ;
-                }
+                result += "             result."+resultInstance+"=sr[\""+column.ColumnName+"\"].ToString();\t";
             }
-            result += "         }\t";//using end
-            result += "     return "+InstanceName+";\t";
+            result+= "          );\t";//param end
+            result += "             " + resultInstance + ".Add(tempM);\t";
+            result += "             return "+resultInstance+";\t";
             result += "     }\t";//method end
+
             result += "     }\t";//class end
             result += "}\t";//namespace end
             return result;
@@ -482,7 +518,7 @@ namespace workTools
                         {
                             result += "@" + column.ColumnName + "";
                         }
-                        if (columnCount != ColumnList.Count && !column.IsPrimaryKey && columnCount != ColumnList.Count&&!column.IsCreateTime)
+                        if (columnCount != ColumnList.Count && !column.IsPrimaryKey && columnCount != ColumnList.Count && !column.IsCreateTime)
                         {
                             result += ",";
                         }
@@ -536,8 +572,8 @@ namespace workTools
                     result += "DECLARE @SQL NVARCHAR(4000)='';\t";
                     result += "DECLARE @WHERE NVARCHAR(4000)='';\t";
                     result += "DECLARE @ORDER NVARCHAR(4000)='';\t";
-                    result += "SET @SQL=@SQL+'SELECT * from [" + tblName + "]' \t";
-                    result += "SET @WHERE=@WHERE+'WHERE 1=1 ' \t";
+                    result += "SET @SQL=@SQL+'SELECT * from [" + tblName + "]'; \t";
+                    result += "SET @WHERE=@WHERE+'WHERE 1=1 ' ;\t";
                     result += "SET @ORDER=@ORDER+'ORDER BY \t";
                     foreach (DataModel column in ColumnList)
                     {
@@ -551,7 +587,7 @@ namespace workTools
                         }
                         if (column.IsUpdateTime)
                         {
-                            result += "[" + column.ColumnName + "] desc'\t";
+                            result += "[" + column.ColumnName + "] desc';\t";
                         }
                     }
                     foreach (DataModel column in ColumnList)
@@ -567,7 +603,7 @@ namespace workTools
                             {
                                 obj_temp = "CONVERT(NVARCHAR(20),@" + column.ColumnName + ")";
                             }
-                            result += "IF(LTRIM(RTRIM(ISNULL(" + obj_temp + ",''))))<>''\t";
+                            result += "IF(LTRIM(RTRIM(ISNULL(" + obj_temp + ",'')))<>'')\t";
                             result += "BEGIN\t";
                             if (IsTypeStringable(column.ColumnType))
                             {
@@ -613,7 +649,7 @@ namespace workTools
                         {
                             result += "[" + column.ColumnName + "]=" + column.DefaultValue + "";
                         }
-                        if (columnCount != ColumnList.Count && !column.IsPrimaryKey)
+                        if (columnCount != ColumnList.Count && !column.IsPrimaryKey&&!column.IsCreateTime)
                         {
                             result += ",";
                         }
